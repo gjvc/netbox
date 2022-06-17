@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 
 from dcim.models import Device, Interface, Location, Rack, Region, Site, SiteGroup
 from extras.models import Tag
@@ -8,8 +9,10 @@ from ipam.constants import *
 from ipam.formfields import IPNetworkFormField
 from ipam.models import *
 from ipam.models import ASN
+from ipam.models.virtualcircuits import L2VPN, L2VPNTermination
 from netbox.forms import NetBoxModelForm
 from tenancy.forms import TenancyForm
+from tenancy.models import Tenant
 from utilities.exceptions import PermissionsViolation
 from utilities.forms import (
     add_blank_choice, BootstrapMixin, ContentTypeChoiceField, DatePicker, DynamicModelChoiceField,
@@ -861,3 +864,54 @@ class ServiceCreateForm(ServiceForm):
                 self.cleaned_data['description'] = service_template.description
         elif not all(self.cleaned_data[f] for f in ('name', 'protocol', 'ports')):
             raise forms.ValidationError("Must specify name, protocol, and port(s) if not using a service template.")
+
+
+#
+# L2VPN
+#
+
+
+class L2VPNForm(NetBoxModelForm):
+    slug = SlugField()
+    tenant = DynamicModelChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        label=_('Tenant'),
+        fetch_trigger='open'
+    )
+
+    class Meta:
+        model = L2VPN
+        fields = ('name', 'slug', 'description', 'type', 'tenant')
+
+
+class L2VPNTerminationForm(NetBoxModelForm):
+    virtual_circuit = DynamicModelChoiceField(
+        queryset=L2VPN.objects.all(),
+        required=True,
+        query_params={},
+        label=_('L2VPN'),
+        fetch_trigger='open'
+    )
+
+    class Meta:
+        model = L2VPNTermination
+        fields = ('l2vpn', 'assigned_object')
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        initial = kwargs.get('initial', {})
+
+        if instance is not None and instance.assigned_object is not None:
+            model = ContentType.objects.get_for_model(instance.assigned_object).model
+            initial[model] = instance.assigned_object
+
+            kwargs['initial'] = initial
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+
+        if self.cleaned_data.get('interface') and self.cleaned_data.get('vlan'):
+            raise ValidationError('Cannot assign both a interface and vlan')
+        self.instance.assigned_object = self.cleaned_data.get('interface') or self.cleaned_data.get('vlan')

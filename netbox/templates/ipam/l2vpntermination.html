@@ -1,0 +1,36 @@
+{% extends 'netbox_plugin_extensions/generic/object.html' %}
+{% load helpers %}
+{% load plugin_helpers %}
+
+{% block content %}
+<div class="row">
+	<div class="col col-md-6">
+        <div class="card">
+            <h5 class="card-header">
+                Virtual Circuit Attributes
+            </h5>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <tr>
+                        <th scope="row">Virtual Circuit</th>
+                        <td>{{ object.virtual_circuit.name|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Assigned Object</th>
+                        <td>{{ object.assigned_object.name|placeholder }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Side</th>
+                        <td>{{ object.side|placeholder }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+	</div>
+	<div class="col col-md-6">
+        {% include 'inc/custom_fields_panel.html' %}
+        {% include 'extras/inc/tags_panel.html' with tags=object.tags.all url='circuits:circuit_list' %}
+    </div>
+</div>
+
+{% endblock %}

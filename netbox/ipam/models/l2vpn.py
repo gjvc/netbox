@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 
 from ipam.choices import L2VPNTypeChoices
 from ipam.constants import L2VPN_ASSIGNMENT_MODELS
@@ -34,6 +35,16 @@ class L2VPN(NetBoxModel):
         to='tenancy.ContactAssignment'
     )
 
+    class Meta:
+        ordering = ('identifier', 'name')
+        verbose_name = 'L2VPN'
+
+    def __str__(self):
+        return f'{self.name} ({self.identifier})'
+
+    def get_absolute_url(self):
+        return reverse('ipam:l2vpn', args=[self.pk])
+
 
 class L2VPNTermination(NetBoxModel):
     l2vpn = models.ForeignKey(
@@ -61,3 +72,12 @@ class L2VPNTermination(NetBoxModel):
         fk_field='assigned_object_id'
     )
 
+    class Meta:
+        ordering = ('l2vpn',)
+        verbose_name = 'L2VPN Termination'
+
+    def __str__(self):
+        return f'{self.assigned_object.name} <> {self.l2vpn.name}'
+
+    def get_absolute_url(self):
+        return reverse('ipam:l2vpn', args=[self.pk])

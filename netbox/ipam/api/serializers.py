@@ -20,7 +20,7 @@ from .nested_serializers import *
 # ASNs
 #
 from .nested_serializers import NestedL2VPNSerializer
-from ..models.virtualcircuits import L2VPNTermination, L2VPN
+from ..models.l2vpn import L2VPNTermination, L2VPN
 
 
 class ASNSerializer(NetBoxModelSerializer):
@@ -471,7 +471,7 @@ class L2VPNSerializer(NetBoxModelSerializer):
 
 class L2VPNTerminationSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='ipam-api:l2vpntermination-detail')
-    virtual_circuit = NestedL2VPNSerializer()
+    l2vpn = NestedL2VPNSerializer()
     content_type = ContentTypeField(
         queryset=ContentType.objects.all()
     )

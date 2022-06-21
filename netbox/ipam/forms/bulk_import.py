@@ -16,6 +16,7 @@ __all__ = (
     'FHRPGroupCSVForm',
     'IPAddressCSVForm',
     'IPRangeCSVForm',
+    'L2VPNCSVForm',
     'PrefixCSVForm',
     'RIRCSVForm',
     'RoleCSVForm',
@@ -425,3 +426,19 @@ class ServiceCSVForm(NetBoxModelCSVForm):
     class Meta:
         model = Service
         fields = ('device', 'virtual_machine', 'name', 'protocol', 'ports', 'description')
+
+
+class L2VPNCSVForm(NetBoxModelCSVForm):
+    tenant = CSVModelChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        to_field_name='name',
+    )
+    type = CSVChoiceField(
+        choices=L2VPNTypeChoices,
+        help_text='IP protocol'
+    )
+
+    class Meta:
+        model = L2VPN
+        fields = ('identifier', 'name', 'slug', 'type', 'description')

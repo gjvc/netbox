@@ -9,7 +9,7 @@ from ipam.constants import *
 from ipam.formfields import IPNetworkFormField
 from ipam.models import *
 from ipam.models import ASN
-from ipam.models.virtualcircuits import L2VPN, L2VPNTermination
+from ipam.models.l2vpn import L2VPN, L2VPNTermination
 from netbox.forms import NetBoxModelForm
 from tenancy.forms import TenancyForm
 from tenancy.models import Tenant
@@ -29,6 +29,8 @@ __all__ = (
     'IPAddressBulkAddForm',
     'IPAddressForm',
     'IPRangeForm',
+    'L2VPNForm',
+    'L2VPNTerminationForm',
     'PrefixForm',
     'RIRForm',
     'RoleForm',
@@ -871,32 +873,64 @@ class ServiceCreateForm(ServiceForm):
 #
 
 
-class L2VPNForm(NetBoxModelForm):
+class L2VPNForm(TenancyForm, NetBoxModelForm):
     slug = SlugField()
-    tenant = DynamicModelChoiceField(
-        queryset=Tenant.objects.all(),
-        required=False,
-        label=_('Tenant'),
-        fetch_trigger='open'
+    import_targets = DynamicModelMultipleChoiceField(
+        queryset=RouteTarget.objects.all(),
+        required=False
+    )
+    export_targets = DynamicModelMultipleChoiceField(
+        queryset=RouteTarget.objects.all(),
+        required=False
+    )
+
+    fieldsets = (
+        ('L2VPN', ('name', 'slug', 'identifier', 'type', 'description', 'tags')),
+        ('Route Targets', ('import_targets', 'export_targets')),
+        ('Tenancy', ('tenant_group', 'tenant')),
     )
 
     class Meta:
         model = L2VPN
-        fields = ('name', 'slug', 'description', 'type', 'tenant')
+        fields = (
+            'name', 'slug', 'identifier', 'description', 'type', 'import_targets', 'export_targets', 'tenant', 'tags'
+        )
 
 
 class L2VPNTerminationForm(NetBoxModelForm):
-    virtual_circuit = DynamicModelChoiceField(
+    l2vpn = DynamicModelChoiceField(
         queryset=L2VPN.objects.all(),
         required=True,
         query_params={},
-        label=_('L2VPN'),
+        label='L2VPN',
         fetch_trigger='open'
+    )
+
+    device = DynamicModelChoiceField(
+        queryset=Device.objects.all(),
+        required=False,
+        query_params={}
+    )
+
+    vlan = DynamicModelChoiceField(
+        queryset=VLAN.objects.all(),
+        required=False,
+        query_params={
+            'available_on_device': '$device'
+        }
+    )
+
+    interface = DynamicModelChoiceField(
+        queryset=Interface.objects.all(),
+        required=False,
+        query_params={
+            'device': '$device'
+        }
     )
 
     class Meta:
         model = L2VPNTermination
-        fields = ('l2vpn', 'assigned_object')
+        fields = ('l2vpn', )
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')

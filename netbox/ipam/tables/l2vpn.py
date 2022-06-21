@@ -1,7 +1,7 @@
 import django_tables2 as tables
 
 from ipam.models import *
-from ipam.models.virtualcircuits import L2VPN, L2VPNTermination
+from ipam.models.l2vpn import L2VPN, L2VPNTermination
 from netbox.tables import NetBoxTable, columns
 
 __all__ = (

@@ -928,8 +928,48 @@ class ServiceFilterSet(NetBoxModelFilterSet):
 
 
 class L2VPNFilterSet(NetBoxModelFilterSet):
-    pass
+    import_target_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='import_targets',
+        queryset=RouteTarget.objects.all(),
+        label='Import target',
+    )
+    import_target = django_filters.ModelMultipleChoiceFilter(
+        field_name='import_targets__name',
+        queryset=RouteTarget.objects.all(),
+        to_field_name='name',
+        label='Import target (name)',
+    )
+    export_target_id = django_filters.ModelMultipleChoiceFilter(
+        field_name='export_targets',
+        queryset=RouteTarget.objects.all(),
+        label='Export target',
+    )
+    export_target = django_filters.ModelMultipleChoiceFilter(
+        field_name='export_targets__name',
+        queryset=RouteTarget.objects.all(),
+        to_field_name='name',
+        label='Export target (name)',
+    )
+
+    class Meta:
+        model = L2VPN
+        fields = ['identifier', 'name', 'type', 'description']
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        qs_filter = Q(identifier=value) | Q(name__icontains=value) | Q(description__icontains=value)
+        return queryset.filter(qs_filter)
 
 
 class L2VPNTerminationFilterSet(NetBoxModelFilterSet):
-    pass
+
+    class Meta:
+        model = L2VPNTermination
+        fields = []
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        qs_filter = Q(l2vpn__name__icontains=value)
+        return queryset.filter(qs_filter)
